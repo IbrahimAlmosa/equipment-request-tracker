@@ -5,11 +5,14 @@ import {
   loadRequests,
   saveRequests,
 } from "./request-store.js";
+import { filterRequestsByPriority } from "./priority-filter.js";
 
 const form = document.querySelector("#request-form");
 const message = document.querySelector("#form-message");
 const neededByInput = document.querySelector("#needed-by");
 const count = document.querySelector("#request-count");
+const priorityFilter = document.querySelector("#priority-filter");
+const filterEmptyState = document.querySelector("#filter-empty-state");
 const emptyState = document.querySelector("#empty-state");
 const tableWrapper = document.querySelector("#request-table-wrapper");
 const tableBody = document.querySelector("#request-table-body");
@@ -17,6 +20,7 @@ const tableBody = document.querySelector("#request-table-body");
 let requests = loadRequests();
 
 neededByInput.min = new Date().toISOString().slice(0, 10);
+priorityFilter.addEventListener("change", renderRequests);
 renderRequests();
 
 form.addEventListener("submit", (event) => {
@@ -48,11 +52,13 @@ form.addEventListener("submit", (event) => {
 });
 
 function renderRequests() {
+  const visibleRequests = filterRequestsByPriority(requests, priorityFilter.value);
   const hasRequests = requests.length > 0;
-  count.textContent = `${requests.length} ${requests.length === 1 ? "request" : "requests"}`;
+  count.textContent = `${visibleRequests.length} of ${requests.length} ${requests.length === 1 ? "request" : "requests"}`;
   emptyState.hidden = hasRequests;
-  tableWrapper.hidden = !hasRequests;
-  tableBody.replaceChildren(...requests.map(createRequestRow));
+  filterEmptyState.hidden = !hasRequests || visibleRequests.length > 0;
+  tableWrapper.hidden = visibleRequests.length === 0;
+  tableBody.replaceChildren(...visibleRequests.map(createRequestRow));
 }
 
 function createRequestRow(request) {
